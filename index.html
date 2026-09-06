@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bloom">
+<meta name="theme-color" content="#FAF7F2">
+<title>Bloom — Your Journeys</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root{
+    --cream:#FAF7F2;
+    --cream-deep:#F1EAE0;
+    --blush:#F8D7E8;
+    --blush-deep:#EFB3D2;
+    --yellow:#F8D96B;
+    --yellow-deep:#E8C247;
+    --sage:#B7D59B;
+    --sage-deep:#95BE76;
+    --lavender:#DCCEF7;
+    --lavender-deep:#C2A9E8;
+    --blue:#C9DEF8;
+    --blue-deep:#A4C4EC;
+    --ink:#2E2E2E;
+    --ink-soft:#7A7275;
+    --line:rgba(46,46,46,0.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;background:var(--cream);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;overscroll-behavior-y:none;}
+  .serif{font-family:"New York","Georgia",serif;}
+  #app{max-width:520px;margin:0 auto;min-height:100vh;
+    padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 110px);
+    position:relative;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .header{margin-bottom:18px;}
+  .header .date{font-size:13px;color:var(--ink-soft);margin:0 0 4px;}
+  .header h1{font-size:26px;font-weight:500;margin:0;line-height:1.25;}
+  .header h1 .name{color:var(--blush-deep);}
+
+  .streak-row{display:flex;align-items:center;gap:8px;margin:10px 0 18px;}
+  .streak-pill{
+    background:var(--yellow);color:var(--ink);
+    padding:6px 14px;border-radius:999px;font-size:13.5px;font-weight:600;
+    display:flex;align-items:center;gap:5px;
+  }
+
+  .progress-card{
+    background:linear-gradient(135deg,var(--blush) 0%, var(--lavender) 100%);
+    border-radius:24px;padding:20px 22px;margin-bottom:24px;
+    box-shadow:0 8px 24px -14px rgba(194,169,232,0.6);
+  }
+  .progress-card .lbl{font-size:13px;color:var(--ink);opacity:0.75;margin:0 0 8px;}
+  .progress-track{height:12px;background:rgba(255,255,255,0.55);border-radius:999px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--ink);border-radius:999px;width:0%;transition:width 0.5s ease;}
+  .progress-pct{font-size:22px;font-weight:600;margin:10px 0 0;font-family:"New York","Georgia",serif;}
+
+  .section-label{font-size:14px;color:var(--ink-soft);margin:6px 0 12px;font-weight:600;}
+
+  .journey-card{
+    background:var(--cream-deep);border-radius:20px;margin-bottom:12px;overflow:hidden;
+    border-left:4px solid var(--jcolor,var(--sage));
+  }
+  .journey-top{display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer;}
+  .journey-emoji-wrap{position:relative;flex:0 0 auto;}
+  .journey-emoji{font-size:26px;}
+  .journey-flower{
+    position:absolute;bottom:-4px;right:-8px;font-size:15px;
+    background:var(--cream);border-radius:50%;padding:1px;
+  }
+  .journey-body{flex:1;min-width:0;}
+  .journey-name{font-size:15.5px;font-weight:600;margin:0;}
+  .journey-meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .journey-caret{font-size:13px;color:var(--ink-soft);transition:transform 0.2s ease;}
+  .journey-card.open .journey-caret{transform:rotate(180deg);}
+  .practices{max-height:0;overflow:hidden;transition:max-height 0.3s ease;padding:0 16px;}
+  .journey-card.open .practices{max-height:600px;padding-bottom:12px;}
+  .practice-row{
+    display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);
+  }
+  .practice-check{
+    width:24px;height:24px;border-radius:50%;border:2px solid var(--jcolor,var(--sage-deep));
+    flex:0 0 auto;display:flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;
+  }
+  .practice-check.done{background:var(--jcolor,var(--sage-deep));}
+  .practice-check svg{width:12px;height:12px;opacity:0;}
+  .practice-check.done svg{opacity:1;}
+  .practice-name{flex:1;font-size:14.5px;}
+  .practice-name.done{text-decoration:line-through;color:var(--ink-soft);}
+  .practice-del{background:none;border:none;color:var(--ink-soft);font-size:17px;opacity:0.5;cursor:pointer;padding:2px 4px;}
+  .add-practice-row{display:flex;gap:8px;padding-top:10px;}
+  .add-practice-row input{
+    flex:1;padding:9px 12px;border-radius:12px;border:1px solid var(--line);
+    background:var(--cream);font-size:13.5px;font-family:inherit;
+  }
+  .add-practice-row button{
+    padding:9px 14px;border-radius:12px;border:none;background:var(--ink);color:var(--cream);
+    font-size:13px;font-weight:600;cursor:pointer;
+  }
+
+  .empty{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+  .empty .emoji{font-size:34px;display:block;margin-bottom:10px;}
+  .empty p{font-size:14.5px;margin:0;line-height:1.5;}
+
+  .progress-journey{
+    background:var(--cream-deep);border-radius:18px;padding:16px;margin-bottom:12px;
+    border-left:4px solid var(--jcolor,var(--sage));
+  }
+  .progress-journey-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .progress-journey-head .em{font-size:20px;}
+  .progress-journey-head .nm{font-weight:600;font-size:14.5px;flex:1;}
+  .progress-journey-head .st{font-size:12px;color:var(--ink-soft);}
+  .week-dots{display:flex;gap:6px;}
+  .week-dot{
+    flex:1;height:26px;border-radius:8px;background:var(--cream);
+    display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-soft);
+  }
+  .week-dot.filled{background:var(--jcolor,var(--sage-deep));color:#fff;}
+
+  .field{margin-bottom:18px;}
+  .field label{font-size:12.5px;color:var(--ink-soft);display:block;margin-bottom:6px;}
+  .field input[type=text]{
+    width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);
+    background:var(--cream-deep);font-size:15px;font-family:inherit;color:var(--ink);
+  }
+  .theme-row{display:flex;gap:10px;}
+  .theme-swatch{
+    flex:1;height:52px;border-radius:14px;cursor:pointer;border:2px solid transparent;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;
+  }
+  .theme-swatch.selected{border-color:var(--ink);}
+  .danger-btn{
+    width:100%;padding:13px;border-radius:14px;border:1px solid #E39A9A;background:transparent;
+    color:#C96565;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;
+  }
+
+  .add-choice{display:flex;flex-direction:column;gap:12px;}
+  .add-choice-btn{
+    display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;
+    background:var(--cream-deep);border:none;cursor:pointer;text-align:left;font-family:inherit;
+  }
+  .add-choice-btn .ic{font-size:24px;}
+  .add-choice-btn .tt{font-size:15.5px;font-weight:600;margin:0;}
+  .add-choice-btn .sb{font-size:12.5px;color:var(--ink-soft);margin:2px 0 0;}
+
+  .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;}
+  .tabbar-inner{
+    pointer-events:auto;max-width:520px;width:100%;margin:0 auto;
+    background:var(--cream);border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-around;
+    padding:10px 10px calc(env(safe-area-inset-bottom) + 8px);
+  }
+  .tab-btn{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;
+    color:var(--ink-soft);font-size:10.5px;cursor:pointer;font-family:inherit;padding:4px 8px;}
+  .tab-btn.active{color:var(--ink);}
+  .tab-btn .ic{font-size:19px;}
+  .tab-add{
+    width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--cream);
+    display:flex;align-items:center;justify-content:center;font-size:24px;margin-top:-26px;
+    box-shadow:0 8px 20px -6px rgba(46,46,46,0.4);
+  }
+
+  .overlay{position:fixed;inset:0;background:rgba(46,46,46,0.4);display:none;align-items:flex-end;justify-content:center;z-index:50;}
+  .overlay.open{display:flex;}
+  .sheet{background:var(--cream);width:100%;max-width:520px;border-radius:26px 26px 0 0;
+    padding:24px 22px calc(env(safe-area-inset-bottom) + 24px);animation:slideup 0.25s ease;}
+  @keyframes slideup{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .sheet h2{margin:0 0 18px;font-size:19px;font-weight:600;}
+  .sheet label{font-size:12.5px;color:var(--ink-soft);display:block;margin:14px 0 6px;}
+  .sheet input[type=text], .sheet select{
+    width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);
+    background:var(--cream-deep);font-size:15px;color:var(--ink);font-family:inherit;
+  }
+  .emoji-picker,.color-picker{display:flex;flex-wrap:wrap;gap:8px;}
+  .emoji-opt{
+    width:44px;height:44px;border-radius:12px;background:var(--cream-deep);
+    display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;
+    border:2px solid transparent;
+  }
+  .emoji-opt.selected{border-color:var(--ink);}
+  .color-opt{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+  .color-opt.selected{border-color:var(--ink);}
+  .sheet-actions{display:flex;gap:10px;margin-top:22px;}
+  .sheet-actions button{flex:1;padding:14px;border-radius:16px;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn-cancel{background:var(--cream-deep);color:var(--ink-soft);}
+  .btn-save{background:var(--ink);color:var(--cream);}
+
+  .celebrate-toast{
+    position:fixed;top:calc(env(safe-area-inset-top) + 16px);left:50%;transform:translateX(-50%) translateY(-140%);
+    background:var(--ink);color:var(--cream);padding:13px 20px;border-radius:16px;
+    font-size:13.5px;font-weight:500;max-width:calc(100% - 40px);text-align:center;z-index:80;
+    transition:transform 0.35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 10px 24px -8px rgba(46,46,46,0.35);
+  }
+  .celebrate-toast.show{transform:translateX(-50%) translateY(0);}
+  #confetti-layer{position:fixed;inset:0;pointer-events:none;z-index:79;overflow:hidden;}
+  .confetti-piece{position:absolute;top:-10px;border-radius:2px;opacity:0.95;animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(400deg);opacity:0;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="view active" id="view-home">
+    <div class="header">
+      <p class="date serif" id="dateLabel"></p>
+      <h1 class="serif" id="greeting">Good morning<span class="name"></span> 🌤</h1>
+    </div>
+    <div class="streak-row" id="globalStreakRow"></div>
+
+    <div class="progress-card">
+      <p class="lbl">Today's Progress</p>
+      <div class="progress-track"><div class="progress-fill" id="homeFill"></div></div>
+      <p class="progress-pct" id="homePct">0%</p>
+    </div>
+
+    <p class="section-label serif">Your Journeys</p>
+    <div id="journeyList"></div>
+  </div>
+
+  <div class="view" id="view-progress">
+    <div class="header"><h1 class="serif">Your Growth</h1></div>
+    <div id="progressList"></div>
+  </div>
+
+  <div class="view" id="view-add">
+    <div class="header"><h1 class="serif">Add</h1></div>
+    <div class="add-choice">
+      <button class="add-choice-btn" id="btnNewJourney">
+        <span class="ic">✨</span>
+        <div><p class="tt">New Journey</p><p class="sb">Start a new area of your life to nurture</p></div>
+      </button>
+      <button class="add-choice-btn" id="btnNewPractice">
+        <span class="ic">🌱</span>
+        <div><p class="tt">New Practice</p><p class="sb">Add something to repeat within a Journey</p></div>
+      </button>
+    </div>
+  </div>
+
+  <div class="view" id="view-journeys">
+    <div class="header"><h1 class="serif">Manage Journeys</h1></div>
+    <div id="manageList"></div>
+  </div>
+
+  <div class="view" id="view-profile">
+    <div class="header"><h1 class="serif">Profile</h1></div>
+    <div class="field">
+      <label>Your name</label>
+      <input type="text" id="nameInput" maxlength="24">
+    </div>
+    <div class="field">
+      <label>Theme</label>
+      <div class="theme-row" id="themeRow"></div>
+    </div>
+    <button class="danger-btn" id="resetBtn">Reset all data</button>
+  </div>
+
+</div>
+
+<div class="tabbar">
+  <div class="tabbar-inner">
+    <button class="tab-btn active" data-view="home"><span class="ic">🏠</span>Home</button>
+    <button class="tab-btn" data-view="progress"><span class="ic">📊</span>Progress</button>
+    <button class="tab-add" id="tabAddBtn">+</button>
+    <button class="tab-btn" data-view="journeys"><span class="ic">🗂</span>Journeys</button>
+    <button class="tab-btn" data-view="profile"><span class="ic">⚙️</span>Profile</button>
+  </div>
+</div>
+
+<div class="overlay" id="journeyOverlay">
+  <div class="sheet">
+    <h2 class="serif">New Journey</h2>
+    <label>Name it</label>
+    <input type="text" id="journeyNameInput" placeholder="e.g. Walk With God" maxlength="30">
+    <label>Choose an icon</label>
+    <div class="emoji-picker" id="journeyEmojiPicker"></div>
+    <label>Choose a colour</label>
+    <div class="color-picker" id="journeyColorPicker"></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="journeyCancel">Cancel</button>
+      <button class="btn-save" id="journeySave">Create Journey</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="practiceOverlay">
+  <div class="sheet">
+    <h2 class="serif">New Practice</h2>
+    <label>Which Journey?</label>
+    <select id="practiceJourneySelect"></select>
+    <label>What will you practice?</label>
+    <input type="text" id="practiceNameInput" placeholder="e.g. Morning Prayer" maxlength="40">
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="practiceCancel">Cancel</button>
+      <button class="btn-save" id="practiceSave">Add Practice</button>
+    </div>
+  </div>
+</div>
+
+<div id="confetti-layer"></div>
+<div class="celebrate-toast" id="celebrateToast"></div>
+
+<script>
+(function(){
+  var COLORS = ["#EFB3D2","#E8C247","#95BE76","#C2A9E8","#A4C4EC","#E8A57A"];
+  var EMOJIS = ["🕊","💪","📚","🌱","💼","❤️","🧘","🎨","💰","🏡","🎯","🌤"];
+  var CHEER = [
+    "Well done! You're investing in your future self.",
+    "Beautifully done. That's who you're becoming.",
+    "Celebrated ✨ Small steps, real growth.",
+    "That's consistency in motion.",
+    "Nicely done. Your future self says thank you."
+  ];
+  var THEMES = {
+    blush:{a:"#F8D7E8", b:"#DCCEF7", label:"Blush"},
+    sage:{a:"#B7D59B", b:"#F8D96B", label:"Sage"},
+    sky:{a:"#C9DEF8", b:"#F8D7E8", label:"Sky"}
+  };
+
+  var STORE_KEY = "bloom_data_v2";
+  var today = todayKey();
+
+  function todayKey(d){
+    d = d || new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
+  }
+  function dateOffset(n){
+    var d = new Date();
+    d.setDate(d.getDate()+n);
+    return todayKey(d);
+  }
+  function escapeHtml(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+  function defaultState(){
+    return {
+      name:"", theme:"blush",
+      journeys:[
+        {id:"j1", name:"Walk With God", emoji:"🕊", color:"#C2A9E8", practices:[
+          {id:"p1", name:"Morning Prayer", log:[]},
+          {id:"p2", name:"Bible Reading", log:[]}
+        ]},
+        {id:"j2", name:"Fitness", emoji:"💪", color:"#95BE76", practices:[
+          {id:"p3", name:"Workout", log:[]},
+          {id:"p4", name:"Drink Water", log:[]}
+        ]},
+        {id:"j3", name:"Learning", emoji:"📚", color:"#A4C4EC", practices:[
+          {id:"p5", name:"Read", log:[]}
+        ]}
+      ]
+    };
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(!raw) return defaultState();
+      var parsed = JSON.parse(raw);
+      if(!parsed.journeys) return defaultState();
+      return parsed;
+    }catch(e){ return defaultState(); }
+  }
+  function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); applyTheme(); }
+
+  var state = load();
+  var openJourneyId = null;
+
+  function applyTheme(){
+    var t = THEMES[state.theme] || THEMES.blush;
+    document.documentElement.style.setProperty('--blush', t.a);
+    document.documentElement.style.setProperty('--lavender', t.b);
+  }
+
+  function journeyHasActivity(j, dateKey){
+    return j.practices.some(function(p){ return (p.log||[]).indexOf(dateKey) > -1; });
+  }
+  function journeyStreak(j){
+    var streak = 0, i = 0;
+    while(journeyHasActivity(j, dateOffset(-i))){ streak++; i++; }
+    return streak;
+  }
+  function flowerFor(streak){
+    if(streak >= 7) return "🌸";
+    if(streak >= 3) return "🌿";
+    return "🌱";
+  }
+  function globalStreak(){
+    var streak = 0, i = 0;
+    while(state.journeys.some(function(j){ return journeyHasActivity(j, dateOffset(-i)); })){
+      streak++; i++;
+    }
+    return streak;
+  }
+  function practiceDoneToday(p){ return (p.log||[]).indexOf(today) > -1; }
+
+  function renderHeader(){
+    document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+    var h = new Date().getHours();
+    var greet = h<12?"Good morning":h<18?"Good afternoon":"Good evening";
+    var emoji = h<12?"🌤":h<18?"☀️":"🌙";
+    document.getElementById("greeting").innerHTML = greet + (state.name?", <span class='name'>"+escapeHtml(state.name)+"</span>":"") + " "+emoji;
+    var gs = globalStreak();
+    document.getElementById("globalStreakRow").innerHTML = gs>0
+      ? '<div class="streak-pill">🔥 '+gs+' Day Streak</div>'
+      : '<div class="streak-pill" style="background:var(--cream-deep);">🌱 Begin your streak today</div>';
+  }
+
+  if(!state.name){
+    setTimeout(function(){
+      var n = prompt("What should I call you?");
+      if(n && n.trim()){ state.name = n.trim(); save(); renderHeader(); }
+    }, 250);
+  }
+
+  function renderHomeProgress(){
+    var total=0, done=0;
+    state.journeys.forEach(function(j){
+      j.practices.forEach(function(p){ total++; if(practiceDoneToday(p)) done++; });
+    });
+    var pct = total? Math.round(done/total*100) : 0;
+    document.getElementById("homeFill").style.width = pct+"%";
+    document.getElementById("homePct").textContent = total ? pct+"% celebrated today" : "Add a Practice to begin";
+  }
+
+  function renderJourneyList(){
+    var container = document.getElementById("journeyList");
+    if(state.journeys.length===0){
+      container.innerHTML = '<div class="empty"><span class="emoji">🌷</span><p>No Journeys yet.<br>Tap + to begin one.</p></div>';
+      return;
+    }
+    container.innerHTML = state.journeys.map(function(j){
+      var streak = journeyStreak(j);
+      var flower = flowerFor(streak);
+      var doneCount = j.practices.filter(practiceDoneToday).length;
+      var total = j.practices.length;
+      var remaining = total - doneCount;
+      var metaText = total===0 ? "No Practices yet" : (remaining===0 ? "All Celebrated today 🎉" : remaining+" Continue Today");
+      var isOpen = openJourneyId === j.id;
+      var practicesHtml = j.practices.map(function(p){
+        var done = practiceDoneToday(p);
+        return '<div class="practice-row" data-pid="'+p.id+'">'+
+          '<div class="practice-check '+(done?"done":"")+'" style="--jcolor:'+j.color+'" data-action="toggle">'+
+            '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+          '</div>'+
+          '<span class="practice-name '+(done?"done":"")+'">'+escapeHtml(p.name)+'</span>'+
+          '<button class="practice-del" data-action="delete">×</button>'+
+        '</div>';
+      }).join("") + '<div class="add-practice-row">'+
+        '<input type="text" placeholder="Add a Practice" data-jid="'+j.id+'" class="quickAddInput">'+
+        '<button class="quickAddBtn" data-jid="'+j.id+'">Add</button>'+
+      '</div>';
+
+      return '<div class="journey-card '+(isOpen?"open":"")+'" style="--jcolor:'+j.color+'" data-jid="'+j.id+'">'+
+        '<div class="journey-top" data-action="expand">'+
+          '<div class="journey-emoji-wrap"><span class="journey-emoji">'+j.emoji+'</span><span class="journey-flower">'+flower+'</span></div>'+
+          '<div class="journey-body"><p class="journey-name">'+escapeHtml(j.name)+'</p><p class="journey-meta">'+metaText+'</p></div>'+
+          '<span class="journey-caret">▾</span>'+
+        '</div>'+
+        '<div class="practices">'+practicesHtml+'</div>'+
+      '</div>';
+    }).join("");
+
+    Array.prototype.forEach.call(container.querySelectorAll('.journey-top'), function(el){
+      el.addEventListener('click', function(){
+        var jid = el.closest('.journey-card').getAttribute('data-jid');
+        openJourneyId = (openJourneyId===jid) ? null : jid;
+        renderJourneyList();
+      });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll('.practice-check'), function(el){
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        var row = el.closest('.practice-row');
+        var jid = row.closest('.journey-card').getAttribute('data-jid');
+        var pid = row.getAttribute('data-pid');
+        togglePractice(jid, pid);
+      });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll('.practice-del'), function(el){
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        var row = el.closest('.practice-row');
+        var jid = row.closest('.journey-card').getAttribute('data-jid');
+        var pid = row.getAttribute('data-pid');
+        var j = state.journeys.find(function(x){return x.id===jid;});
+        j.practices = j.practices.filter(function(p){return p.id!==pid;});
+        save(); renderAll();
+      });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll('.quickAddBtn'), function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var jid = btn.getAttribute('data-jid');
+        var input = container.querySelector('.quickAddInput[data-jid="'+jid+'"]');
+        var val = input.value.trim();
+        if(!val) return;
+        var j = state.journeys.find(function(x){return x.id===jid;});
+        j.practices.push({id:"p"+Date.now(), name:val, log:[]});
+        save(); renderAll();
+      });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll('.quickAddInput'), function(inp){
+      inp.addEventListener('click', function(e){ e.stopPropagation(); });
+    });
+  }
+
+  function togglePractice(jid, pid){
+    var j = state.journeys.find(function(x){return x.id===jid;});
+    var p = j.practices.find(function(x){return x.id===pid;});
+    p.log = p.log || [];
+    var idx = p.log.indexOf(today);
+    if(idx>-1){
+      p.log.splice(idx,1);
+    } else {
+      p.log.push(today);
+      celebrate();
+    }
+    save();
+    renderAll();
+  }
+
+  function celebrate(){
+    var toast = document.getElementById("celebrateToast");
+    toast.textContent = CHEER[Math.floor(Math.random()*CHEER.length)];
+    toast.classList.add("show");
+    setTimeout(function(){ toast.classList.remove("show"); }, 2200);
+    if(navigator.vibrate){ navigator.vibrate(40); }
+    var layer = document.getElementById("confetti-layer");
+    var colors = [getCss('--blush-deep'), getCss('--yellow-deep'), getCss('--sage-deep'), getCss('--lavender-deep'), getCss('--blue-deep')];
+    for(var i=0;i<22;i++){
+      var piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      var size = 6 + Math.random()*6;
+      piece.style.width = size+"px";
+      piece.style.height = (size*0.4)+"px";
+      piece.style.left = (Math.random()*100)+"vw";
+      piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+      piece.style.animationDuration = (1.4 + Math.random()*1)+"s";
+      piece.style.transform = "rotate("+(Math.random()*360)+"deg)";
+      layer.appendChild(piece);
+      (function(p){ setTimeout(function(){ p.remove(); }, 2600); })(piece);
+    }
+  }
+  function getCss(varName){
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  }
+
+  function renderProgressView(){
+    var container = document.getElementById("progressList");
+    if(state.journeys.length===0){
+      container.innerHTML = '<div class="empty"><span class="emoji">📊</span><p>Nothing to show yet.<br>Create a Journey to start growing.</p></div>';
+      return;
+    }
+    container.innerHTML = state.journeys.map(function(j){
+      var streak = journeyStreak(j);
+      var flower = flowerFor(streak);
+      var days = [];
+      for(var i=6;i>=0;i--){
+        var dk = dateOffset(-i);
+        var active = journeyHasActivity(j, dk);
+        var d = new Date(); d.setDate(d.getDate()-i);
+        days.push('<div class="week-dot '+(active?"filled":"")+'" style="--jcolor:'+j.color+'">'+"SMTWTFS"[d.getDay()]+'</div>');
+      }
+      return '<div class="progress-journey" style="--jcolor:'+j.color+'">'+
+        '<div class="progress-journey-head"><span class="em">'+j.emoji+' '+flower+'</span><span class="nm">'+escapeHtml(j.name)+'</span><span class="st">'+streak+' day streak</span></div>'+
+        '<div class="week-dots">'+days.join("")+'</div>'+
+      '</div>';
+    }).join("");
+  }
+
+  function renderManageList(){
+    var container = document.getElementById("manageList");
+    if(state.journeys.length===0){
+      container.innerHTML = '<div class="empty"><span class="emoji">🗂</span><p>No Journeys yet.</p></div>';
+      return;
+    }
+    container.innerHTML = state.journeys.map(function(j){
+      return '<div class="journey-card" style="--jcolor:'+j.color+'">'+
+        '<div class="journey-top">'+
+          '<div class="journey-emoji-wrap"><span class="journey-emoji">'+j.emoji+'</span></div>'+
+          '<div class="journey-body"><p class="journey-name">'+escapeHtml(j.name)+'</p><p class="journey-meta">'+j.practices.length+' Practices</p></div>'+
+          '<button class="practice-del" data-jid="'+j.id+'" style="font-size:20px;">×</button>'+
+        '</div>'+
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(container.querySelectorAll('.practice-del'), function(btn){
+      btn.addEventListener('click', function(){
+        var jid = btn.getAttribute('data-jid');
+        if(confirm("Delete this Journey and all its Practices?")){
+          state.journeys = state.journeys.filter(function(x){return x.id!==jid;});
+          save(); renderAll();
+        }
+      });
+    });
+  }
+
+  function renderProfile(){
+    document.getElementById("nameInput").value = state.name || "";
+    var row = document.getElementById("themeRow");
+    row.innerHTML = Object.keys(THEMES).map(function(k){
+      var t = THEMES[k];
+      return '<div class="theme-swatch '+(state.theme===k?"selected":"")+'" data-theme="'+k+'" style="background:linear-gradient(135deg,'+t.a+','+t.b+')">'+t.label+'</div>';
+    }).join("");
+    Array.prototype.forEach.call(row.querySelectorAll('.theme-swatch'), function(el){
+      el.addEventListener('click', function(){
+        state.theme = el.getAttribute('data-theme');
+        save(); renderProfile();
+      });
+    });
+  }
+  document.getElementById("nameInput").addEventListener('input', function(e){
+    state.name = e.target.value.trim();
+    save(); renderHeader();
+  });
+  document.getElementById("resetBtn").addEventListener('click', function(){
+    if(confirm("This clears every Journey, Practice, and streak. Continue?")){
+      state = defaultState();
+      save(); renderAll();
+    }
+  });
+
+  function showView(name){
+    Array.prototype.forEach.call(document.querySelectorAll('.view'), function(v){ v.classList.remove('active'); });
+    document.getElementById('view-'+name).classList.add('active');
+    Array.prototype.forEach.call(document.querySelectorAll('.tab-btn'), function(b){
+      b.classList.toggle('active', b.getAttribute('data-view')===name);
+    });
+    if(name==="progress") renderProgressView();
+    if(name==="journeys") renderManageList();
+    if(name==="profile") renderProfile();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.tab-btn'), function(b){
+    b.addEventListener('click', function(){ showView(b.getAttribute('data-view')); });
+  });
+  document.getElementById('tabAddBtn').addEventListener('click', function(){ showView('add'); });
+
+  var selectedEmoji = EMOJIS[0], selectedColor = COLORS[0];
+  function buildEmojiPicker(){
+    var el = document.getElementById("journeyEmojiPicker");
+    el.innerHTML = EMOJIS.map(function(em){
+      return '<div class="emoji-opt '+(em===selectedEmoji?"selected":"")+'" data-em="'+em+'">'+em+'</div>';
+    }).join("");
+    Array.prototype.forEach.call(el.querySelectorAll('.emoji-opt'), function(o){
+      o.addEventListener('click', function(){
+        selectedEmoji = o.getAttribute('data-em');
+        Array.prototype.forEach.call(el.querySelectorAll('.emoji-opt'), function(x){x.classList.remove('selected');});
+        o.classList.add('selected');
+      });
+    });
+  }
+  function buildColorPicker(){
+    var el = document.getElementById("journeyColorPicker");
+    el.innerHTML = COLORS.map(function(c){
+      return '<div class="color-opt '+(c===selectedColor?"selected":"")+'" data-c="'+c+'" style="background:'+c+'"></div>';
+    }).join("");
+    Array.prototype.forEach.call(el.querySelectorAll('.color-opt'), function(o){
+      o.addEventListener('click', function(){
+        selectedColor = o.getAttribute('data-c');
+        Array.prototype.forEach.call(el.querySelectorAll('.color-opt'), function(x){x.classList.remove('selected');});
+        o.classList.add('selected');
+      });
+    });
+  }
+  document.getElementById('btnNewJourney').addEventListener('click', function(){
+    document.getElementById('journeyNameInput').value = "";
+    buildEmojiPicker(); buildColorPicker();
+    document.getElementById('journeyOverlay').classList.add('open');
+  });
+  document.getElementById('journeyCancel').addEventListener('click', function(){
+    document.getElementById('journeyOverlay').classList.remove('open');
+  });
+  document.getElementById('journeySave').addEventListener('click', function(){
+    var val = document.getElementById('journeyNameInput').value.trim();
+    if(!val) return;
+    state.journeys.push({id:"j"+Date.now(), name:val, emoji:selectedEmoji, color:selectedColor, practices:[]});
+    save();
+    document.getElementById('journeyOverlay').classList.remove('open');
+    showView('home'); renderAll();
+  });
+
+  document.getElementById('btnNewPractice').addEventListener('click', function(){
+    if(state.journeys.length===0){
+      alert("Create a Journey first, then add Practices to it.");
+      return;
+    }
+    var sel = document.getElementById('practiceJourneySelect');
+    sel.innerHTML = state.journeys.map(function(j){ return '<option value="'+j.id+'">'+j.emoji+' '+escapeHtml(j.name)+'</option>'; }).join("");
+    document.getElementById('practiceNameInput').value = "";
+    document.getElementById('practiceOverlay').classList.add('open');
+  });
+  document.getElementById('practiceCancel').addEventListener('click', function(){
+    document.getElementById('practiceOverlay').classList.remove('open');
+  });
+  document.getElementById('practiceSave').addEventListener('click', function(){
+    var jid = document.getElementById('practiceJourneySelect').value;
+    var val = document.getElementById('practiceNameInput').value.trim();
+    if(!val) return;
+    var j = state.journeys.find(function(x){return x.id===jid;});
+    j.practices.push({id:"p"+Date.now(), name:val, log:[]});
+    save();
+    document.getElementById('practiceOverlay').classList.remove('open');
+    showView('home'); renderAll();
+  });
+
+  function renderAll(){
+    renderHeader();
+    renderHomeProgress();
+    renderJourneyList();
+  }
+  applyTheme();
+  renderAll();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>
