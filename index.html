@@ -30,7 +30,7 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;background:var(--cream);color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;overscroll-behavior-y:none;}
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;overscroll-behavior-y:none;overflow-x:hidden;}
   .serif{font-family:"New York","Georgia",serif;}
   #app{max-width:520px;margin:0 auto;min-height:100vh;
     padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 110px);
@@ -109,7 +109,7 @@
 
   .progress-journey{
     background:var(--cream-deep);border-radius:18px;padding:16px;margin-bottom:12px;
-    border-left:4px solid var(--jcolor,var(--sage));
+    border-left:4px solid var(--jcolor,var(--sage));overflow:hidden;
   }
   .progress-journey-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
   .progress-journey-head .em{font-size:20px;}
@@ -129,7 +129,7 @@
   }
   .range-toggle button.active{background:var(--cream);color:var(--ink);}
   .month-label{font-size:12.5px;color:var(--ink-soft);margin:0 0 8px;text-align:center;}
-  .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;width:100%;}
   .month-dow{font-size:10px;color:var(--ink-soft);text-align:center;padding-bottom:2px;}
   .month-cell{
     aspect-ratio:1;border-radius:6px;background:var(--cream);
